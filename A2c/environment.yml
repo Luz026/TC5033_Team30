@@ -1,0 +1,26 @@
+name: amlm-env-A2C
+channels:
+  - conda-forge
+dependencies:
+  # Python estable para OpenCV
+  - python=3.11
+
+  # Núcleo científico
+  - numpy
+  - pandas
+  - matplotlib
+  - pytorch
+  - torchvision
+
+  # Visión por computadora
+  - opencv
+
+  # Jupyter
+  - jupyterlab
+  - ipykernel
+
+  # Utilidades
+  - pip
+
+  # (Opcional) si luego trabajas con imágenes más avanzadas
+  # - scikit-image
