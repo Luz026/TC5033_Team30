@@ -1,3 +1,11 @@
 .DS_Store
+.claude/
+__pycache__/
 A2b/data
 A3A/glove_embeddings
+A3A/context/
+A3A/docs/
+A3A/AGENTS.md
+A3A/CLAUDE.md
+A3A/embeddings_dict_300D.pkl
+A3A/embeddings_dict_100D.pkl
