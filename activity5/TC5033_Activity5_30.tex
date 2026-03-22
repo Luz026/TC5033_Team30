@@ -1,0 +1,151 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Diffusion Models in Computer Vision (2023--2026):\\
+State of the Art, Efficiency, and Control}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+}
+
+\maketitle
+
+\begin{abstract}
+\textbf{Objective:} This survey synthesizes recent advances (2023--2026) in diffusion models (DMs) for computer vision, focusing on \textit{(i)} image quality and semantic consistency, \textit{(ii)} computational efficiency and latency, and \textit{(iii)} controllability and conditioning mechanisms.
+
+\textbf{Method:} We conduct a critical review of recent literature from major digital libraries (e.g., IEEE Xplore, ACM DL, Scopus, arXiv), prioritizing contributions with open-source code, standardized evaluations, and head-to-head comparisons against strong baselines.
+
+\textbf{Key findings:} DMs have significantly improved sample fidelity and diversity, while \textit{consistency/rectified flows}, distillation, and refined guidance have reduced sampling steps. Control mechanisms (e.g., control networks and lightweight adapters) enable precision editing at moderate cost. Persistent gaps include energy cost, safety and governance, and robust multimodal evaluation.
+
+\textbf{Contribution:} We present a trend map of advances, limitations, and actionable future directions to enable responsible and efficient deployments.
+\\[2pt]
+\textit{Index Terms}—Diffusion models, computer vision, efficiency, controllability, image generation, evaluation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+component, formatting, style, styling, insert.
+\end{IEEEkeywords}
+
+
+% ------------------------------
+% 1. Introduction
+% ------------------------------
+\section{Introduction}
+Diffusion models (DMs) have emerged as the leading paradigm for image synthesis and guided editing, increasingly displacing GANs across benchmarks. Between 2023 and 2026, research has emphasized (a) improving perceptual quality and semantic alignment, (b) reducing inference latency and compute footprint for viability on resource-constrained devices, and (c) enabling explicit control over geometry, style, and attributes via textual and non-textual conditions.
+
+\textbf{Contributions.} This paper: (1) introduces a unified comparative framework linking architectural choices, training regimes, and sampling strategies to reported metrics; (2) provides a critical analysis of recurring limitations (e.g., localized mode collapse, guidance sensitivity, and prompt fragility); and (3) outlines concrete, near-term research directions for responsible adoption.
+
+\textbf{Organization.} Section \ref{sec:related} presents the literature review and critical analysis. Section \ref{sec:future} discusses future opportunities. Section \ref{sec:conclusion} concludes with practical recommendations.
+
+
+% ------------------------------
+% 2. Literature Review (Critical)
+% ------------------------------
+\section{Literature Review (Critical)}\label{sec:related}
+
+% --- 2.1 Models and architectures
+\subsection{Recent models and architectures}
+% TODO: Replace placeholders [1]–[3] with real >=2023 citations from IEEE/ACM/NeurIPS/CVPR/arXiv.
+Latent diffusion variants and \textit{rectified/consistency flows} report accelerations with minor quality loss by operating in compressed spaces and smoothing sampling trajectories. Transformer-based backbones further improve scaling and text–image alignment, while hybrid architectures (UNet with attention) remain competitive for mid-to-high resolutions \cite{ref_sota1,ref_sota2,ref_sota3}.
+
+\textbf{Critical view.} Latent designs reduce compute but may introduce perceptual biases due to the learned compressor, affecting fine details. \textit{Consistency/rectified flows} reduce sampling steps but require carefully tuned schedules and losses; out-of-distribution stability varies across domains (fine textures vs. rigid structures).
+
+% --- 2.2 Efficiency: training and inference
+\subsection{Efficiency: training and inference}
+Distillation (progressive/one-step), post-training quantization, and structured pruning reduce inference latency with controlled degradation in FID/CLIPScore \cite{ref_eff1,ref_eff2}. Enhanced guidance strategies (e.g., CFG variants and classifier-free refinements) improve the fidelity–diversity trade-off, especially under few-step sampling \cite{ref_guidance1}.
+
+\textbf{Critical view.} Memory remains a bottleneck for resolutions \(>1024^2\), and throughput degrades with small batch sizes on consumer GPUs. Quantization gains are sensitive to calibration data and prompt domain. Distilled students can inherit teacher biases, and re-training costs are non-trivial.
+
+% --- 2.3 Control and conditioning
+\subsection{Control and conditioning}
+Structural control conditions on edges, poses, depth maps, or segmentations enable geometry-preserving editing. In parallel, lightweight adapters and LoRA-style modules support rapid personalization with few examples, avoiding changes to base weights \cite{ref_control1,ref_control2}.
+
+\textbf{Critical view.} Control networks increase inference cost and pipeline complexity; data-scarce domains risk overfitting of adapters, harming generalization. Benchmarking often underestimates geometric faithfulness and multi-condition obedience.
+
+% --- 2.4 Evaluation and metrics
+\subsection{Evaluation and metrics}
+Classical metrics (FID, IS) show imperfect correlation with human judgments; thus, vision–language metrics (e.g., CLIPScore) and large-scale human studies are increasingly used. Recent protocols target content safety auditing, watermarking, and copyright risk \cite{ref_eval1,ref_eval2}.
+
+\textbf{Critical view.} Reliance on reference models (e.g., CLIP) introduces circularity and bias. The field needs composite batteries that quantify multimodal faithfulness, spatial consistency, and robustness to prompt perturbations. Reproducibility across implementations remains challenging.
+
+% --- 2.5 Applications and deployment
+\subsection{Applications and deployment}
+DMs are integrated into industrial pipelines for assisted design, advertising asset generation, professional inpainting/outpainting, and rapid prototyping. Sensitive environments (medical, cultural heritage, education) emphasize safety-by-design and training-data governance \cite{ref_app1,ref_app2}.
+
+\textbf{Critical view.} Data lineage and consent management lack standardization; energy cost of training and scaled inference remains a material externality.
+
+
+% ------------------------------
+% 3. Future Directions
+% ------------------------------
+\section{Future Directions}\label{sec:future}
+\textbf{(1) Ultra-efficient few-step sampling:} Combine rectified/consistency flows with guided distillation and adaptive schedulers to achieve near-SOTA quality in 2--4 steps.
+
+\textbf{(2) Robust multimodal control:} Natively integrate edge/depth/text/sketch conditioning with guarantees of geometric and semantic coherence.
+
+\textbf{(3) Holistic evaluation:} Design composite metrics (perception, prompt faithfulness, spatial/temporal consistency) and reproducible leaderboards with versioned test sets.
+
+\textbf{(4) Safety and governance:} Robust watermarking, in-the-loop content filters, and end-to-end provenance for regulated settings.
+
+\textbf{(5) Green efficiency:} Energy-aware training/inference, checkpoint reuse, adapters, and weight sharing to reduce carbon footprint.
+
+
+% ------------------------------
+% 4. Conclusion
+% ------------------------------
+\section{Conclusion}\label{sec:conclusion}
+Diffusion models have rapidly advanced in quality, control, and efficiency. However, responsible scaling requires stronger evaluation, governance, and compute cost reductions. This survey provides a comparative landscape and outlines research directions that can help transition diffusion-based generation toward trustworthy, sustainable production deployments.
+
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+
+
+\end{document}
