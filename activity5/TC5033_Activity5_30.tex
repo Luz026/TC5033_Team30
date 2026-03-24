@@ -68,7 +68,7 @@ A01796937@tec.mx
 
 \textbf{Method:} We conduct a critical review of primary literature from IEEE Xplore, top-tier conferences (CVPR/ICCV/ECCV, NeurIPS/ICLR), and arXiv. We prioritize works releasing code, providing standardized evaluations, or enabling head-to-head comparisons against strong baselines. The review is organized along architectural choices (e.g., UNet vs. transformer backbones), sampling and training strategies (e.g., rectified/consistency flows and distillation), and control/personalization mechanisms (e.g., ControlNet, adapters, LoRA).
 
-\textbf{Key findings:} (1) Rectified/consistency flows and distillation substantially reduce the number of function evaluations (NFEs) required during sampling with limited degradation in quality, yet tuning schedules and losses remains delicate and affects robustness out-of-distribution \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv}. (2) Structural control (edges, depth, segmentation, pose) and parameter-efficient personalization enable geometry-preserving edits and rapid domain adaptation \cite{Zhang2023ControlNet,Zhao2023UniControlNet,Smith2024LoRADiffusion}. (3) Evaluation practices still rely on imperfect proxies (e.g., FID, CLIPScore), often misaligned with human judgments, urging composite protocols and stronger reproducibility \cite{Stein2023EvaluationFlaws}. 
+\textbf{Key findings:} (1) Rectified/consistency flows and distillation substantially reduce the number of function evaluations (NFEs) required during sampling with limited degradation in quality, yet tuning schedules and losses remains delicate and affects robustness out-of-distribution \cite{Lee2024RectifiedArxiv}. (2) Structural control (edges, depth, segmentation, pose) and parameter-efficient personalization enable geometry-preserving edits and rapid domain adaptation \cite{Zhang2023ControlNet,Zhao2023UniControlNet,Smith2024LoRADiffusion}. (3) Evaluation practices still rely on imperfect proxies (e.g., FID, CLIPScore), often misaligned with human judgments, urging composite protocols and stronger reproducibility \cite{Stein2023EvaluationFlaws}. 
 
 \textbf{Contribution:} We provide a coherent map of advances and limitations, extract common design patterns across recent methods, and formulate actionable research directions that target trustworthy, efficient, and governable deployments. 
 \end{abstract}
@@ -83,7 +83,7 @@ Diffusion models, computer vision, image generation, controllable generation, mo
 \section{Introduction}
 Generative diffusion models (DMs) have irreversibly shifted the landscape of image synthesis and guided editing. Their rise, propelled by scalable training on large image--text corpora and effective noise-based generative processes, has displaced prior paradigms (e.g., GANs) on many benchmarks. From 2023 to 2026, research trends coalesced around three priorities. First, maximizing perceptual quality and semantic alignment under realistic prompts and constraints. Second, reducing inference latency and memory footprints to make high-quality generation feasible on commodity GPUs or even edge devices. Third, enabling fine-grained control via textual and non-textual conditioning---including structure-aware guidance from edges, depth, segmentation, or human pose---and personalization with minimal data.
 
-The efficiency front has progressed rapidly. One family of approaches uses improved \emph{flows} (e.g., rectified and consistency) to learn smoother generative trajectories and reduce the number of function evaluations (NFEs) needed at test time. Another family focuses on distillation, quantization, and pruning to compress or accelerate sampling while retaining fidelity \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv}. Both directions deliver fewer sampling steps and smaller latency, though stability and prompt robustness can degrade without carefully tuned schedules or calibration.
+The efficiency front has progressed rapidly. One family of approaches uses improved \emph{flows} (e.g., rectified and consistency) to learn smoother generative trajectories and reduce the number of function evaluations (NFEs) needed at test time. Another family focuses on distillation, quantization, and pruning to compress or accelerate sampling while retaining fidelity \cite{Lee2024RectifiedArxiv}. Both directions deliver fewer sampling steps and smaller latency, though stability and prompt robustness can degrade without carefully tuned schedules or calibration.
 
 On controllability, structural guidance (e.g., ControlNet-style adapters) injects spatial conditions (edges, depth, segmentation, pose) into powerful pretrained text-to-image backbones, achieving geometry-preserving edits and better prompt obedience. In parallel, modular adapters (e.g., Uni-ControlNet) and parameter-efficient fine-tuning (e.g., LoRA) make personalization feasible, allowing rapid style/identity infusion while freezing base weights \cite{Zhang2023ControlNet,Zhao2023UniControlNet,Smith2024LoRADiffusion}. These gains bring real-world deployments closer, but also raise questions regarding data governance, content provenance, and domain-specific generalization.
 
@@ -97,13 +97,33 @@ Evaluation remains an open challenge. Conventional metrics (FID, IS) capture onl
 % ------------------------------
 \section{Literature Review (Critical)}\label{sec:related}
 
-\subsection{Architectures and model design}
-A common thread in modern DMs is the interplay between architectural capacity and sampling efficiency. While UNet backbones augmented with cross-attention remain competitive for mid-to-high resolutions, transformer-based decoders improve long-range coherence and text--image alignment at scale. Latent diffusion variants compress images into learned latent spaces, reducing compute and enabling higher resolutions, but the learned compressor may bias fine details or textures in ways that subtly impact realism and faithfulness. Concurrently, \emph{rectified} and \emph{consistency} flows learn smoother trajectories so that few-step sampling becomes viable without substantial quality loss \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv}. 
+\subsection{Architectures and Model Design}
+While UNet backbones remain competitive, \textbf{Diffusion Transformers (DiT)} have emerged as the standard for high-resolution synthesis. A breakthrough is the adoption of \textbf{Rectified Flows} (RF), governed by the ODE:
+\begin{equation}
+\frac{dx_t}{dt} = v(x_t, t) = x_1 - x_0
+\end{equation}
+By learning the velocity field $v$, models achieve high-fidelity sampling in 1--4 steps \cite{Lee2024RectifiedArxiv}.
+
+% Tabla que abarca las dos columnas
+\begin{table*}[t]
+\centering
+\caption{Comparison of Generative Paradigms (2023--2026)}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Feature} & \textbf{Latent Diffusion} & \textbf{Rectified Flow} & \textbf{Consistency Models} \\ \hline
+Inference Steps & 20--50 & 1--10 & 1--2 \\ \hline
+Path Geometry & Curved (SDE) & Linear (ODE) & Direct Map \\ \hline
+Training Cost & High & Moderate & High (Distillation) \\ \hline
+Architecture & UNet / DiT & DiT & UNet / DiT \\ \hline
+\end{tabular}
+\label{tab:comparison}
+\end{table*}
+
 
 \textbf{Critical analysis.} Latent designs trade raw pixel capacity for compute efficiency; artifacts can appear in high-frequency regions or for fine-grained attributes. Flow-based accelerations depend on loss shaping and schedule calibration; improvements at small resolutions (e.g., CIFAR-10, 64$\times$64 ImageNet) may not directly translate to megapixel-scale generation. Moreover, across backbones, prompt sensitivity and localized mode collapse (for rare attributes) persist, suggesting that architectural scaling alone does not guarantee robust alignment.
 
 \subsection{Training and inference efficiency}
-Sampling-time acceleration is the dominant lever for user-facing latency. Improved flows exploit near-straight ODE paths; distillation (progressive or one-step) compresses the teacher’s sampling trajectory into few student steps; post-training quantization and structured pruning reduce arithmetic and memory use at modest cost to quality. Collectively, these techniques target a regime of 2--8 sampling steps with acceptable FID/CLIPScore degradation \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv}. 
+Sampling-time acceleration is the dominant lever for user-facing latency. Improved flows exploit near-straight ODE paths; distillation (progressive or one-step) compresses the teacher’s sampling trajectory into few student steps; post-training quantization and structured pruning reduce arithmetic and memory use at modest cost to quality. Collectively, these techniques target a regime of 2--8 sampling steps with acceptable FID/CLIPScore degradation \cite{Lee2024RectifiedArxiv}. 
 
 \textbf{Critical analysis.} The path to ultra-low NFEs is fragile. Distilled students can inherit teacher biases and prompt fragility; quantization gains depend on calibration domains and may reduce diversity or introduce banding at high resolution; pruning can entangle with attention modules, harming compositionality. In practice, memory remains a barrier above 1024$^2$ resolution on commodity GPUs. Furthermore, throughput under small batch sizes (typical of interactive applications) can negate theoretical speedups; end-to-end profiling is thus essential.
 
@@ -132,7 +152,7 @@ DMs now support rapid ideation in design, professional inpainting/outpainting wo
 % ------------------------------
 \section{Future Directions}\label{sec:future}
 \textbf{(1) Ultra-low NFE sampling with robustness guarantees.}
-A key target is closing the gap between single-/few-step sampling and multi-step teacher quality under broad prompts and resolutions. Promising avenues include combining rectified/consistency flows with knowledge distillation and adaptive schedulers, and integrating regularizers that explicitly trade off sharpness vs. semantic faithfulness across domains \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv}. Beyond average-case FID, protocols should quantify robustness to prompt perturbations and OOD attributes.
+A key target is closing the gap between single-/few-step sampling and multi-step teacher quality under broad prompts and resolutions. Promising avenues include combining rectified/consistency flows with knowledge distillation and adaptive schedulers, and integrating regularizers that explicitly trade off sharpness vs. semantic faithfulness across domains \cite{Lee2024RectifiedArxiv}. Beyond average-case FID, protocols should quantify robustness to prompt perturbations and OOD attributes.
 
 \textbf{(2) Composable, conflict-aware control.}
 Next-generation controllers should natively handle multiple conditions (edges, depth, segmentation, pose, sketches) with conflict detection and resolution (e.g., constraint satisfaction or differentiable consistency losses). Lightweight, plug-and-play adapters (à la Uni-ControlNet) could expose standardized interfaces for condition weighting and schedule synchronization \cite{Zhao2023UniControlNet,Zhang2023ControlNet}.
@@ -152,7 +172,7 @@ Content provenance (e.g., cryptographic signatures, robust watermarking), data l
 % 4. Conclusion
 % ------------------------------
 \section{Conclusion}\label{sec:conclusion}
-Diffusion models have rapidly advanced from research curiosities to foundational tools for visual synthesis and editing. Recent progress shows that high-quality generation is compatible with practical latency through rectified/consistency flows and distillation, while control and personalization broaden applicability to real workflows \cite{Lee2024RectifiedFlows,Lee2024RectifiedArxiv,Zhang2023ControlNet,Zhao2023UniControlNet,Smith2024LoRADiffusion}. Yet, evaluation and governance remain the main bottlenecks: current metrics incompletely reflect human perception and compositional faithfulness, and reproducibility often lags behind claimed gains \cite{Stein2023EvaluationFlaws}. 
+Diffusion models have rapidly advanced from research curiosities to foundational tools for visual synthesis and editing. Recent progress shows that high-quality generation is compatible with practical latency through rectified/consistency flows and distillation, while control and personalization broaden applicability to real workflows \cite{Lee2024RectifiedArxiv,Zhang2023ControlNet,Zhao2023UniControlNet,Smith2024LoRADiffusion}. Yet, evaluation and governance remain the main bottlenecks: current metrics incompletely reflect human perception and compositional faithfulness, and reproducibility often lags behind claimed gains \cite{Stein2023EvaluationFlaws}. 
 
 Our review maps the space of architectures, sampling strategies, and adapters; highlights recurring limitations; and articulates a research agenda centered on robustness, composability, efficiency, and governance. We believe that sustained attention to reproducible evaluation, conflict-aware control, and principled personalization---together with energy-aware engineering and provenance mechanisms---can convert today’s promising prototypes into trustworthy, sustainable systems for production use \cite{Chen2025ComprehensiveSurvey}.
 
